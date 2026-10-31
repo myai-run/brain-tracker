@@ -1,10 +1,10 @@
 import { type FC } from "react";
-import { Button } from "./ui/button";
+import BrainScene from "./brain-scene";
 
 interface AppResolverProps{}
 
 const AppResolver: FC<AppResolverProps> = () => {
-    return <Button />
+    return <BrainScene />
 }
 
 export default AppResolver
