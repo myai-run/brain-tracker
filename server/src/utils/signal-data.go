@@ -16,7 +16,7 @@ func GetValidatedSignalDataParams(rawParams types.GetSingalDataParamsDTO) types.
 	return params
 }
 
-func GetSignalDataType(signal types.RawSignalData) types.SignalType {
+func GetSignalDataType(signal types.RawIncomingSignalData) types.SignalType {
 	if signal["pow"] != nil {
 		return types.POW
 	} else if signal["eeg"] != nil {
@@ -31,4 +31,15 @@ func GetSignalDataType(signal types.RawSignalData) types.SignalType {
 		return types.FAC
 	}
 	return types.UNKNOWN
+}
+
+func IsValidClientSignal(signal *types.ClientSignalDataDTO[any]) bool {
+	if signal == nil {
+		return false
+	}
+	_, ok := types.ValidSignalTypes[types.ClientSignalType(signal.Type)]
+	if !ok {
+		return false
+	}
+	return true
 }

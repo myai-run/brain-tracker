@@ -8,6 +8,8 @@ import (
 
 func GetRouter() *gin.Engine {
 	routerEngine := gin.Default()
-	routerEngine.GET("/handle-signals", controllers.HandleIncomingSignals)
+	signalRoutes := routerEngine.Group("signal")
+	signalRoutes.GET("handle-resource", controllers.HandleResourceSignals)
+	signalRoutes.GET("handle-client", controllers.HandleClientSignals)
 	return routerEngine
 }
