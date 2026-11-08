@@ -26,6 +26,15 @@ func CreateSignalData(data *models.SignalData) error {
 	return nil
 }
 
+func CreateBulkSignalData(data *[]models.SignalData) error {
+	result := configs.DB.Create(data)
+	if result.Error != nil {
+		return result.Error
+	}
+
+	return nil
+}
+
 func DeleteSignalDataByID(id int) error {
 	result := configs.DB.Where("id = ?", id).Delete(&models.SignalData{})
 	if result.Error != nil {
