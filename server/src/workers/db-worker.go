@@ -3,6 +3,7 @@ package workers
 import (
 	"airun/brain-tracker/server/src/models"
 	"airun/brain-tracker/server/src/repository"
+	"context"
 	"log"
 	"time"
 )
@@ -11,7 +12,7 @@ var dbWriteChannelCap int = 4096
 var dbWriteBatchCap int = 256
 var DbWriteChannel = make(chan models.SignalData, dbWriteChannelCap)
 
-func InitiateDBWorker() {
+func InitiateDBWorker(context context.Context) {
 	go func() {
 		defer func() {
 			workerErr := recover()
@@ -44,6 +45,8 @@ func InitiateDBWorker() {
 				signalsBatch = append(signalsBatch, signal)
 			case <-ticker.C:
 				flushSingals()
+			case <-context.Done():
+				break
 			}
 		}
 

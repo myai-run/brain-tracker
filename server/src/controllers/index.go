@@ -67,6 +67,7 @@ func HandleClientSignals(requestContext *gin.Context) {
 		log.Printf("WebSocket upgrade error: %v", err)
 		return
 	}
+	workers.InitiateClientStreamSignal(wsConnection)
 	defer wsConnection.Close()
 
 	for {
@@ -76,7 +77,7 @@ func HandleClientSignals(requestContext *gin.Context) {
 			break
 		}
 
-		parsedSignal := types.ClientSignalDataDTO[any]{}
+		parsedSignal := types.IncomingClientSignalDTO[any]{}
 		err = json.Unmarshal(message, &parsedSignal)
 		if err != nil {
 			log.Printf("Unmarshal Error: %v", err)
@@ -88,21 +89,10 @@ func HandleClientSignals(requestContext *gin.Context) {
 
 		// stream start
 		if parsedSignal.Type == types.START_STREAMING {
-
-		}
-
-		// manage streaming
-		if parsedSignal.Type == types.STREAMING {
-			// get data from repository and send to client
 			err := wsConnection.WriteMessage(messageType, message)
 			if err != nil {
 				continue
 			}
-			// var signals = []models.SignalData{}
-			// var params = types.GetSingalDataParamsDTO{
-			// 	// Offset: ,
-			// }
-			// signals, err := repository.GetSignalData()
 		}
 
 		// manage stream end

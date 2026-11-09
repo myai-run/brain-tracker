@@ -10,7 +10,7 @@ import (
 func GetSignalData(params types.GetSingalDataParamsDTO) ([]models.SignalData, error) {
 	var result []models.SignalData
 	validatedParams := utils.GetValidatedSignalDataParams(params)
-	tx := configs.DB.Offset(*validatedParams.Offset).Limit(*validatedParams.Limit).Find(&result)
+	tx := configs.DB.Offset(*validatedParams.Offset).Limit(*validatedParams.Limit).Where("time > ?", validatedParams.RecievedAfter).Find(&result)
 	if tx.Error != nil {
 		return nil, tx.Error
 	}

@@ -1,8 +1,9 @@
 package types
 
 type GetSingalDataParamsDTO struct {
-	Offset *int `json:"offset"`
-	Limit  *int `json:"limit"`
+	Offset        *int   `json:"offset"`
+	Limit         *int   `json:"limit"`
+	RecievedAfter string `json:"recieved_after"`
 }
 
 type SignalType string
@@ -23,17 +24,20 @@ type ClientSignalType string
 
 const (
 	START_STREAMING ClientSignalType = "start-streaming"
-	STREAMING       ClientSignalType = "streaming"
 	END_STREAMING   ClientSignalType = "end-streaming"
 )
 
 var ValidSignalTypes = map[ClientSignalType]struct{}{
 	START_STREAMING: {},
-	STREAMING:       {},
 	END_STREAMING:   {},
 }
 
-type ClientSignalDataDTO[T any] struct {
-	Type ClientSignalType `json:"type"`
-	Data T                `json:"data"`
+type OutgoingClientSignalDTO[T any] struct {
+	Data T `json:"data"`
+}
+
+type IncomingClientSignalDTO[T any] struct {
+	Type               ClientSignalType `json:"type"`
+	Data               T                `json:"data"`
+	LastStreamRecieved string           `json:"last_string_recieved"`
 }

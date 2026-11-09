@@ -12,6 +12,9 @@ func GetValidatedSignalDataParams(rawParams types.GetSingalDataParamsDTO) types.
 	if rawParams.Limit == nil {
 		params.Limit = &defaultValue
 	}
+	if rawParams.Limit == nil {
+		params.RecievedAfter = ""
+	}
 
 	return params
 }
@@ -33,7 +36,7 @@ func GetSignalDataType(signal types.RawIncomingSignalData) types.SignalType {
 	return types.UNKNOWN
 }
 
-func IsValidClientSignal(signal *types.ClientSignalDataDTO[any]) bool {
+func IsValidClientSignal(signal *types.IncomingClientSignalDTO[any]) bool {
 	if signal == nil {
 		return false
 	}
