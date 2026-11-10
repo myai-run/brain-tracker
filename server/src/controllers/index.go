@@ -3,11 +3,13 @@ package controllers
 import (
 	"airun/brain-tracker/server/src/configs"
 	"airun/brain-tracker/server/src/models"
+	"airun/brain-tracker/server/src/repository"
 	"airun/brain-tracker/server/src/types"
 	"airun/brain-tracker/server/src/utils"
 	"airun/brain-tracker/server/src/workers"
 	"encoding/json"
 	"log"
+	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
 )
@@ -64,14 +66,16 @@ func HandleClientSignals(requestContext *gin.Context) {
 		nil,
 	)
 	if err != nil {
-		log.Printf("WebSocket upgrade error: %v", err)
+		log.Printf("WebSocket upgrade error: %v\n%s", err, debug.Stack())
 		return
 	}
-	workers.InitiateClientStreamSignal(wsConnection)
-	defer wsConnection.Close()
+	workers.InitiateClientStreamSocket(wsConnection)
+	defer workers.CloseClientStreamSocket()
 
+	offset := 0
+	limit := 100
 	for {
-		messageType, message, err := wsConnection.ReadMessage()
+		_, message, err := wsConnection.ReadMessage()
 		if err != nil {
 			log.Printf("Read error: %v", err)
 			break
@@ -87,25 +91,29 @@ func HandleClientSignals(requestContext *gin.Context) {
 			continue
 		}
 
-		// stream start
 		if parsedSignal.Type == types.START_STREAMING {
-			err := wsConnection.WriteMessage(messageType, message)
-			if err != nil {
-				continue
-			}
+			workers.ClientStreamSocketActive = true
 		}
 
-		// manage stream end
-		if parsedSignal.Type == types.END_STREAMING {
-			log.Print("End Stream command recieved. Closing now ...")
-			err := wsConnection.Close()
-			if err != nil {
-				log.Print("Stream Close Failed.")
-				log.Print(err)
-			} else {
-				log.Print("Stream Closed")
+		if workers.ClientStreamSocketActive {
+			params := types.GetSingalDataParamsDTO{
+				Offset:        &offset,
+				Limit:         &limit,
+				RecievedAfter: parsedSignal.LastStreamRecieved,
 			}
-			break
+			signals, err := repository.GetSignalData(params)
+			if err != nil {
+				log.Printf("Error getting signal data: %v\n%s", err, debug.Stack())
+				continue
+			}
+			for _, signal := range signals {
+				workers.StreamSignalChannel <- utils.SignalDataToOutgoingClientSignalDTO(signal)
+			}
+			offset = offset + limit
+		}
+
+		if parsedSignal.Type == types.END_STREAMING {
+			workers.ClientStreamSocketActive = false
 		}
 	}
 }

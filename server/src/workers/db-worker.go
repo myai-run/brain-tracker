@@ -12,7 +12,7 @@ var dbWriteChannelCap int = 4096
 var dbWriteBatchCap int = 256
 var DbWriteChannel = make(chan models.SignalData, dbWriteChannelCap)
 
-func InitiateDBWorker(context context.Context) {
+func InitiateDBWorker(mainContext context.Context) {
 	go func() {
 		defer func() {
 			workerErr := recover()
@@ -34,6 +34,7 @@ func InitiateDBWorker(context context.Context) {
 			signalsBatch = []models.SignalData{}
 		}
 
+	mainLoop:
 		for {
 			select {
 			case signal := <-DbWriteChannel:
@@ -45,8 +46,8 @@ func InitiateDBWorker(context context.Context) {
 				signalsBatch = append(signalsBatch, signal)
 			case <-ticker.C:
 				flushSingals()
-			case <-context.Done():
-				break
+			case <-mainContext.Done():
+				break mainLoop
 			}
 		}
 

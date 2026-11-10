@@ -1,6 +1,9 @@
 package utils
 
-import "airun/brain-tracker/server/src/types"
+import (
+	"airun/brain-tracker/server/src/models"
+	"airun/brain-tracker/server/src/types"
+)
 
 func GetValidatedSignalDataParams(rawParams types.GetSingalDataParamsDTO) types.GetSingalDataParamsDTO {
 	var params = rawParams
@@ -45,4 +48,11 @@ func IsValidClientSignal(signal *types.IncomingClientSignalDTO[any]) bool {
 		return false
 	}
 	return true
+}
+
+func SignalDataToOutgoingClientSignalDTO(signal models.SignalData) types.OutgoingClientSignalDTO[any] {
+	return types.OutgoingClientSignalDTO[any]{
+		Type: signal.Type,
+		Data: signal,
+	}
 }

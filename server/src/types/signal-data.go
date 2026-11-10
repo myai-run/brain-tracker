@@ -33,7 +33,8 @@ var ValidSignalTypes = map[ClientSignalType]struct{}{
 }
 
 type OutgoingClientSignalDTO[T any] struct {
-	Data T `json:"data"`
+	Type SignalType `json:"type"`
+	Data T          `json:"data"`
 }
 
 type IncomingClientSignalDTO[T any] struct {
