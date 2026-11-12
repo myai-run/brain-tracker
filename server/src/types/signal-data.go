@@ -40,5 +40,5 @@ type OutgoingClientSignalDTO[T any] struct {
 type IncomingClientSignalDTO[T any] struct {
 	Type               ClientSignalType `json:"type"`
 	Data               T                `json:"data"`
-	LastStreamRecieved string           `json:"last_string_recieved"`
+	LastStreamRecieved *string          `json:"last_string_recieved"`
 }
