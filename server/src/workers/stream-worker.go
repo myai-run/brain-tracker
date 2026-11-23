@@ -2,64 +2,85 @@ package workers
 
 import (
 	"airun/brain-tracker/server/src/types"
+	"airun/brain-tracker/server/src/utils"
 	"context"
 	"encoding/json"
-	"log"
-	"runtime/debug"
-	"time"
+	"errors"
 
 	"github.com/gorilla/websocket"
 )
 
-var StreamSignalChannel = make(chan types.OutgoingClientSignalDTO[any], 256)
-var ClientStreamSocket *websocket.Conn
-var ClientStreamSocketActive bool
+var StreamChannel = make(chan types.OutgoingClientSignalDTO[any])
+var StreamChannelActive bool = false
 
-func InitiateClientStreamSocket(conn *websocket.Conn) {
-	ClientStreamSocket = conn
+type StreamWorkerOptions struct {
+	MainCtx      context.Context
+	WsConnection *websocket.Conn
 }
 
-func CloseClientStreamSocket() {
-	err := ClientStreamSocket.Close()
-	if err != nil {
-		log.Printf("Error closing client stream socket: %v\n%s", err, debug.Stack())
-	}
-}
-
-func InitiateStreamWorker(mainContext context.Context) {
+func InitiateStreamWorker(options StreamWorkerOptions) {
 	go func() {
 		defer func() {
 			err := recover()
 			if err != nil {
-				log.Printf("ERROR in stream worker %v\n%s", err, debug.Stack())
+				utils.LogError(err.(error))
 			}
 		}()
 
-		sendSignalToClient := func(signal *types.OutgoingClientSignalDTO[any]) {
-			if !ClientStreamSocketActive {
+		for {
+			_, message, err := options.WsConnection.ReadMessage()
+			unMarshaledSignal := types.IncomingClientSignalDTO[any]{}
+			if err != nil {
+				utils.LogError(
+					errors.New("Error While Reading Socket"),
+				)
+				continue
+			}
+			err = json.Unmarshal(message, &unMarshaledSignal)
+			if err != nil {
+				utils.LogError(
+					errors.New("Validating Incoming Signal Failed"),
+				)
+				continue
+			}
+			if unMarshaledSignal.Message == types.START_STREAMING {
+				StreamChannelActive = true
+				break
+			} else if unMarshaledSignal.Message == types.END_STREAMING {
+				StreamChannelActive = false
+				break
+			}
+		}
+
+		sendToClient := func(outgoingSignal types.OutgoingClientSignalDTO[any]) {
+			if !StreamChannelActive {
+				utils.LogError(
+					errors.New("Stream Channel Activation Required Before Sending Any Message"),
+				)
 				return
 			}
-			jsonSignal, err := json.Marshal(*signal)
+
+			stringifiedMessage, err := json.Marshal(outgoingSignal)
 			if err != nil {
-				log.Printf("Error marshalling signal: %v\n%s", err, debug.Stack())
+				utils.LogError(
+					errors.New("Outgoing Signal Marshaling Failed"),
+				)
 				return
 			}
-			ClientStreamSocket.SetWriteDeadline(time.Now().Add(10 * time.Second))
-			err = ClientStreamSocket.WriteMessage(websocket.TextMessage, jsonSignal)
+			err = options.WsConnection.WriteMessage(websocket.TextMessage, stringifiedMessage)
 			if err != nil {
-				log.Printf("Error sending signal to client: %v\n%s", err, debug.Stack())
+				utils.LogError(
+					errors.New("Outgoing Signal Write Failed"),
+				)
 				return
 			}
 		}
 
-	mainLoop:
-		for {
-			select {
-			case signal := <-StreamSignalChannel:
-				sendSignalToClient(&signal)
-			case <-mainContext.Done():
-				break mainLoop
-			}
+		select {
+		case signal := <-StreamChannel:
+			sendToClient(signal)
+		case <-options.MainCtx.Done():
+			options.WsConnection.Close()
 		}
 	}()
 }

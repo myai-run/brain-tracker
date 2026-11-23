@@ -1,7 +1,9 @@
 package utils
 
 import (
+	"log"
 	"os"
+	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,4 +26,8 @@ func GetEnv(key string, defaultValue string) string {
 		return defaultValue
 	}
 	return value
+}
+
+func LogError(err error) {
+	log.Printf("Recieved Error %v , %s", err, debug.Stack())
 }

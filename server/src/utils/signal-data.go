@@ -29,7 +29,7 @@ func IsValidClientSignal(signal *types.IncomingClientSignalDTO[any]) bool {
 	if signal == nil {
 		return false
 	}
-	_, ok := types.ValidSignalTypes[types.ClientSignalType(signal.Type)]
+	_, ok := types.ValidIncomingSignalMessages[types.IncomingSignalMessage(signal.Message)]
 	if !ok {
 		return false
 	}
