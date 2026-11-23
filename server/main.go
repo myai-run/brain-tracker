@@ -22,7 +22,6 @@ func main() {
 	}
 
 	workers.InitiateDBWorker(mainContext)
-	workers.InitiateStreamWorker(mainContext)
 
 	router := router.GetRouter()
 	router.Run(":8080")

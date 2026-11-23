@@ -26,7 +26,7 @@ func HandleResourceSignals(requestContext *gin.Context) {
 	defer wsConnection.Close()
 
 	for {
-		messageType, message, err := wsConnection.ReadMessage()
+		_, message, err := wsConnection.ReadMessage()
 		if err != nil {
 			log.Printf("Read error: %v", err)
 			break
@@ -57,12 +57,7 @@ func HandleResourceSignals(requestContext *gin.Context) {
 		// save data while streaming it
 		workers.DbWriteChannel <- repoValue
 		// live stream
-		workers.StreamSignalChannel <- streamValue
-
-		if err := wsConnection.WriteMessage(messageType, message); err != nil {
-			log.Printf("Write error: %v", err)
-			break
-		}
+		workers.StreamChannel <- streamValue
 	}
 }
 
